@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PharmaDash — Market Analytics Dashboard</title>
+  <meta name="description" content="Pharmaceutical market analytics: YTD 2026 vs 2025 Sales, PPG%, Market Share for defined market products">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     SCREEN 1 — UPLOAD
+══════════════════════════════════════════════════════════ -->
+<div id="screen-upload" class="screen active">
+  <div class="upload-bg"></div>
+  <div class="upload-container">
+
+    <div class="upload-header">
+      <div class="logo">
+        <span class="logo-icon">&#9877;</span>
+        <div>
+          <div class="logo-title">PharmaDash</div>
+          <div class="logo-sub">Pharmaceutical Market Intelligence Platform</div>
+        </div>
+      </div>
+      <h1 class="upload-headline">YTD 2026 vs 2025 — Market Analytics</h1>
+      <p class="upload-sub">Upload your Defined Market and Data Source sheets to instantly update data, calculate KPIs, and explore the interactive dashboard.</p>
+    </div>
+
+    <div class="upload-zones">
+      <!-- Defined Market Selector & Input Card -->
+      <div class="upload-zone" id="zone-defined">
+        <div class="zone-icon">&#128203;</div>
+        <div class="zone-title">Defined Market Sheet</div>
+        <div class="zone-sub">Select a saved market or upload a new sheet</div>
+        
+        <!-- Saved Markets Selector Bar -->
+        <div class="saved-market-box" onclick="event.stopPropagation()">
+          <label class="saved-mkt-label">&#128190; Saved Markets:</label>
+          <div class="saved-mkt-row">
+            <select id="saved-market-select" class="saved-mkt-dropdown" onchange="App.onSelectSavedMarket(this.value)">
+              <option value="">-- Choose a Recorded Market --</option>
+            </select>
+            <button type="button" class="btn-del-mkt" id="btn-del-mkt" title="Delete selected market" onclick="App.deleteSelectedMarket()" style="display:none">&#128465;</button>
+          </div>
+        </div>
+
+        <div class="zone-divider"><span>OR ENTER NEW SHEET</span></div>
+
+        <div class="zone-hint" onclick="document.getElementById('file-defined').click()">Upload New Excel / CSV (.xlsx / .xls / .csv)</div>
+        <div class="zone-status" id="status-defined" onclick="document.getElementById('file-defined').click()">Drop file here or click to browse</div>
+        <div class="zone-badge" id="badge-defined">&#10003; Loaded</div>
+        <input type="file" id="file-defined" class="file-hidden" accept=".xlsx,.xls,.csv">
+      </div>
+
+      <div class="upload-connector">
+        <div class="connector-icon">&#8644;</div>
+        <div class="connector-label">Updates from</div>
+      </div>
+
+      <div class="upload-zone" id="zone-source" onclick="document.getElementById('file-source').click()">
+        <div class="zone-icon">&#128202;</div>
+        <div class="zone-title">Data Source Sheet</div>
+        <div class="zone-sub">Latest market data (IMS/IQVIA or internal sales audit)</div>
+        <div class="zone-hint">Excel / CSV (.xlsx / .xls / .csv)</div>
+        <div class="zone-status" id="status-source">Drop file here or click to browse</div>
+        <div class="zone-badge" id="badge-source">&#10003; Loaded</div>
+        <input type="file" id="file-source" class="file-hidden" accept=".xlsx,.xls,.csv">
+      </div>
+    </div>
+
+    <div class="upload-actions">
+      <button class="btn-sample" onclick="App.loadSampleData()">&#128300; Load Sample Data — Egyptian PPI Market</button>
+      <button class="btn-primary" id="btn-configure" disabled onclick="App.goToMapping()">Configure Columns &#8594;</button>
+    </div>
+
+    <div class="upload-tips">
+      <div class="tip">&#128161; Wide-format columns (Jan 2025, Feb 2025...)</div>
+      <div class="tip">&#128279; Joined by Brand / Product Name</div>
+      <div class="tip">&#128197; YTD auto-detected: Jan-Oct 2026</div>
+      <div class="tip">&#128228; Export updated Excel + KPI sheet</div>
+      <div class="tip">&#127981; Filter and analyse by Manufacturer</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     SCREEN 2 — COLUMN MAPPING
+══════════════════════════════════════════════════════════ -->
+<div id="screen-mapping" class="screen">
+  <div class="topbar">
+    <div class="topbar-logo">PharmaDash</div>
+    <div class="steps">
+      <span class="step done">1 Upload</span>
+      <span class="step-sep">&#8250;</span>
+      <span class="step active">2 Map Columns</span>
+      <span class="step-sep">&#8250;</span>
+      <span class="step">3 Dashboard</span>
+    </div>
+    <button class="btn-ghost" onclick="App.goToUpload()">&#8592; Back</button>
+  </div>
+
+  <div class="mapping-body">
+    <div class="mapping-intro">
+      <h2>Column Configuration</h2>
+      <p>We have auto-detected the best matches — please review and confirm before running the analysis.</p>
+    </div>
+
+    <div class="mapping-grid">
+      <div class="map-card">
+        <div class="map-card-title">&#128203; Defined Market Sheet</div>
+        <div class="map-sheet-info" id="dm-info"></div>
+
+        <!-- Option to save / record this defined market -->
+        <div class="save-market-input-card">
+          <label class="save-market-label">&#128190; Record / Name this Defined Market (for quick selection next time):</label>
+          <div class="save-market-input-row">
+            <input type="text" id="record-market-name" class="record-market-input" placeholder="e.g. PPI Egyptian Market, Anti-hypertensive Class, Oncology...">
+            <button type="button" class="btn-record-mkt" onclick="App.recordCurrentMarket()">Save</button>
+          </div>
+          <div class="record-hint" id="record-hint">Optional: gives this market configuration a name to reload anytime with 1 click.</div>
+        </div>
+
+        <div class="map-row"><label>Product / Brand Name</label><select id="dm-product"></select></div>
+        <div class="map-row"><label>Manufacturer / Company</label><select id="dm-mfr"></select></div>
+        <div class="map-row"><label>Molecule (optional)</label><select id="dm-mol"><option value="">Skip</option></select></div>
+        <div class="map-row"><label>Dosage Form (optional)</label><select id="dm-form"><option value="">Skip</option></select></div>
+        <div class="map-row">
+          <label>Units vs Value identified by</label>
+          <select id="dm-type-pat">
+            <option value="auto">Auto-detect</option>
+            <option value="suf-uv">Suffix: Units / Value</option>
+            <option value="suf-short">Suffix: U / V</option>
+            <option value="pre-uv">Prefix: Units / Value</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="map-card">
+        <div class="map-card-title">&#128202; Data Source Sheet</div>
+        <div class="map-sheet-info" id="ds-info"></div>
+        <div class="map-row"><label>Product / Brand Name</label><select id="ds-product"></select></div>
+        <div class="map-row"><label>Manufacturer / Company (optional)</label><select id="ds-mfr"><option value="">Not present</option></select></div>
+        <div class="map-row">
+          <label>Units vs Value identified by</label>
+          <select id="ds-type-pat">
+            <option value="auto">Auto-detect</option>
+            <option value="suf-uv">Suffix: Units / Value</option>
+            <option value="suf-short">Suffix: U / V</option>
+            <option value="pre-uv">Prefix: Units / Value</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="detected-section">
+      <h3>Detected Monthly Columns</h3>
+      <p>These columns will be used for YTD calculations (Jan-Oct 2025 and Jan-Oct 2026).</p>
+      <div class="months-preview" id="months-preview"></div>
+    </div>
+
+    <div class="mapping-actions">
+      <div class="match-summary" id="match-summary"></div>
+      <button class="btn-primary btn-analyze" id="btn-analyze" onclick="App.runAnalysis()">
+        &#9889; Generate Analytics Dashboard
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     SCREEN 3 — DASHBOARD
+══════════════════════════════════════════════════════════ -->
+<div id="screen-dashboard" class="screen">
+  <header class="dash-header">
+    <div class="dash-logo">PharmaDash</div>
+    <div class="dash-market-name" id="dash-market-name">Defined Market Analytics Dashboard</div>
+    <div class="dash-header-right">
+      <span class="scope-badge">&#127919; Defined Market Only</span>
+      <div class="period-control-group">
+        <span class="period-label-icon">&#128197;</span>
+        <select id="header-period-select" class="header-period-dropdown" onchange="App.onHeaderPeriodChange(this.value)" title="Select same-period comparison for PPG%">
+          <option value="1-6" selected>H1 (Jan–Jun) 2026 vs. 2025</option>
+          <option value="1-3">Q1 (Jan–Mar) 2026 vs. 2025</option>
+          <option value="1-9">Q3 (Jan–Sep) 2026 vs. 2025</option>
+          <option value="1-10">YTD Oct (Jan–Oct) 2026 vs. 2025</option>
+          <option value="1-12">Full Year (Jan–Dec) 2026 vs. 2025</option>
+        </select>
+      </div>
+      <!-- Unified Export Suite -->
+      <div class="export-actions-group">
+        <button class="btn-export-html" onclick="App.exportDynamicHTML()" title="Export complete standalone interactive HTML dashboard file">
+          <span class="btn-icon">&#127760;</span> Dynamic HTML
+        </button>
+        <button class="btn-export-pdf" onclick="App.exportPDF()" title="Export executive report as PDF document">
+          <span class="btn-icon">&#128196;</span> PDF Report
+        </button>
+        <button class="btn-export" onclick="App.exportData()" title="Export Excel workbook with KPIs and updated data">
+          <span class="btn-icon">&#128228;</span> Excel
+        </button>
+      </div>
+      <button class="btn-ghost-sm" onclick="App.goToUpload()">&#8617; New</button>
+    </div>
+  </header>
+
+  <div class="dash-layout">
+    <aside class="dash-sidebar">
+      <!-- Interactive Comparison Timeline Filter -->
+      <div class="sb-section sb-timeline-section">
+        <div class="sb-label">&#128337; COMPARISON TIMELINE (2026 vs. 2025)</div>
+        
+        <!-- Period Preset Pills -->
+        <div class="period-presets-grid">
+          <button class="period-preset-btn active" data-preset="h1" data-start="1" data-end="6" onclick="App.setPeriod(1, 6, 'h1')">H1 (Jan–Jun)</button>
+          <button class="period-preset-btn" data-preset="q1" data-start="1" data-end="3" onclick="App.setPeriod(1, 3, 'q1')">Q1 (Jan–Mar)</button>
+          <button class="period-preset-btn" data-preset="q2" data-start="4" data-end="6" onclick="App.setPeriod(4, 6, 'q2')">Q2 (Apr–Jun)</button>
+          <button class="period-preset-btn" data-preset="q3" data-start="1" data-end="9" onclick="App.setPeriod(1, 9, 'q3')">Q3 (Jan–Sep)</button>
+          <button class="period-preset-btn" data-preset="oct" data-start="1" data-end="10" onclick="App.setPeriod(1, 10, 'oct')">YTD Oct</button>
+          <button class="period-preset-btn" data-preset="fy" data-start="1" data-end="12" onclick="App.setPeriod(1, 12, 'fy')">Full Year</button>
+        </div>
+
+        <!-- Visual Interactive Timeline Bar -->
+        <div class="timeline-container">
+          <div class="timeline-header-info">
+            <span class="timeline-sub-title">Interactive Month Range:</span>
+            <span class="timeline-active-badge" id="timeline-active-badge">Jan – Jun</span>
+          </div>
+          <div class="timeline-month-chips" id="timeline-month-chips">
+            <!-- 12 months dynamically rendered/clickable -->
+          </div>
+          <div class="timeline-slider-track">
+            <input type="range" id="timeline-range-start" min="1" max="12" value="1" step="1" oninput="App.onTimelineSliderChange('start', this.value)" class="timeline-slider" title="Start Month">
+            <input type="range" id="timeline-range-end" min="1" max="12" value="6" step="1" oninput="App.onTimelineSliderChange('end', this.value)" class="timeline-slider" title="End Month">
+          </div>
+        </div>
+
+        <!-- Custom Dropdowns -->
+        <div class="custom-period-row">
+          <div class="period-input-box">
+            <label>From Month</label>
+            <select id="period-from" onchange="App.onCustomPeriodChange()">
+              <option value="1" selected>Jan</option>
+              <option value="2">Feb</option>
+              <option value="3">Mar</option>
+              <option value="4">Apr</option>
+              <option value="5">May</option>
+              <option value="6">Jun</option>
+              <option value="7">Jul</option>
+              <option value="8">Aug</option>
+              <option value="9">Sep</option>
+              <option value="10">Oct</option>
+              <option value="11">Nov</option>
+              <option value="12">Dec</option>
+            </select>
+          </div>
+          <div class="period-input-box">
+            <label>To Month</label>
+            <select id="period-to" onchange="App.onCustomPeriodChange()">
+              <option value="1">Jan</option>
+              <option value="2">Feb</option>
+              <option value="3">Mar</option>
+              <option value="4">Apr</option>
+              <option value="5">May</option>
+              <option value="6" selected>Jun</option>
+              <option value="7">Jul</option>
+              <option value="8">Aug</option>
+              <option value="9">Sep</option>
+              <option value="10">Oct</option>
+              <option value="11">Nov</option>
+              <option value="12">Dec</option>
+            </select>
+          </div>
+        </div>
+        <div class="period-hint-text">Dynamically compares the exact same window for 2026 vs. 2025 unit &amp; value sales.</div>
+      </div>
+
+      <div class="sb-section">
+        <div class="sb-label">METRIC</div>
+        <div class="metric-row">
+          <button class="metric-btn active" id="mb-value" onclick="App.setMetric('value')">Value (EGP)</button>
+          <button class="metric-btn" id="mb-volume" onclick="App.setMetric('volume')">Volume (Units)</button>
+        </div>
+      </div>
+
+      <div class="sb-section">
+        <div class="sb-label">MANUFACTURER</div>
+        <label class="filter-all-label">
+          <input type="checkbox" id="mfr-all-check" checked onchange="App.toggleAllMfr(this.checked)"> All Manufacturers
+        </label>
+        <div class="sb-filter-list" id="mfr-filter-list"></div>
+      </div>
+
+      <div class="sb-section" id="mol-section" style="display:none">
+        <div class="sb-label">MOLECULE</div>
+        <div class="sb-filter-list" id="mol-filter-list"></div>
+      </div>
+
+      <div class="sb-section">
+        <div class="sb-label">TOP PRODUCTS</div>
+        <input type="range" id="topn-slider" min="5" max="30" value="15" oninput="App.setTopN(this.value)" class="sb-slider">
+        <div class="slider-label">Top <span id="topn-display">15</span> Defined Products</div>
+      </div>
+
+      <div class="sb-section">
+        <div class="sb-label">SEARCH BRAND</div>
+        <input type="text" id="product-search" placeholder="Type brand name..." class="sb-search" oninput="App.searchProduct(this.value)">
+      </div>
+    </aside>
+
+    <main class="dash-main">
+      <div class="kpi-grid" id="kpi-grid"></div>
+
+      <div class="chart-row">
+        <div class="chart-card chart-lg">
+          <div class="chart-hdr">
+            <div class="chart-title" id="prod-chart-title">YTD Value Sales by Defined Product with PPG% — 2026 vs 2025</div>
+            <div class="chart-hdr-btns">
+              <button class="cbtn active" id="cbtn-vert" onclick="Dashboard.setProductOrientation('y')">Vertical</button>
+              <button class="cbtn" id="cbtn-horiz" onclick="Dashboard.setProductOrientation('x')">Horizontal</button>
+            </div>
+          </div>
+          <div class="chart-body"><canvas id="ch-products"></canvas></div>
+        </div>
+        <div class="chart-card chart-sm">
+          <div class="chart-hdr">
+            <div class="chart-title">Defined Market Share 2026</div>
+            <div class="chart-sub" id="ms-sub">within Defined Market</div>
+          </div>
+          <div class="chart-body donut-body"><canvas id="ch-donut"></canvas></div>
+          <div class="donut-legend" id="donut-legend"></div>
+        </div>
+      </div>
+
+      <div class="chart-row">
+        <div class="chart-card">
+          <div class="chart-hdr">
+            <div class="chart-title">PPG% by Defined Product (Previous Period Growth)</div>
+          </div>
+          <div class="chart-body"><canvas id="ch-ppg"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-hdr">
+            <div class="chart-title">Performance by Manufacturer (Defined Market)</div>
+          </div>
+          <div class="chart-body"><canvas id="ch-mfr"></canvas></div>
+        </div>
+      </div>
+
+      <div class="chart-row">
+        <div class="chart-card">
+          <div class="chart-hdr">
+            <div class="chart-title">Defined MS% vs PPG% Strategy Matrix</div>
+            <div class="chart-sub">Bubble size = YTD 2026 Sales</div>
+          </div>
+          <div class="chart-body"><canvas id="ch-bubble"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-hdr">
+            <div class="chart-title">Monthly Trend — Defined Market (Jan-Oct)</div>
+            <select id="trend-select" class="chart-select" onchange="Dashboard.updateTrend(this.value)">
+              <option value="__total__">Total Defined Market</option>
+            </select>
+          </div>
+          <div class="chart-body"><canvas id="ch-trend"></canvas></div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-hdr">
+          <div class="chart-title">Defined Market Products Performance</div>
+          <div class="table-hdr-right">
+            <span class="table-count" id="tbl-count"></span>
+            <button class="cbtn" onclick="App.downloadCSV()">Download CSV</button>
+          </div>
+        </div>
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th class="th-sort" onclick="Dashboard.sortTable('rank')" data-col="rank">Rank <span class="sort-icon"></span></th>
+                <th class="th-sort" onclick="Dashboard.sortTable('product')" data-col="product">Brand <span class="sort-icon"></span></th>
+                <th class="th-sort" onclick="Dashboard.sortTable('manufacturer')" data-col="manufacturer">Manufacturer <span class="sort-icon"></span></th>
+                <th>Molecule</th>
+                <th class="th-sort" onclick="Dashboard.sortTable('ytd26v')" data-col="ytd26v" id="th-val26">2026 Value <span class="sort-icon"></span></th>
+                <th class="th-sort" onclick="Dashboard.sortTable('ytd25v')" data-col="ytd25v" id="th-val25">2025 Value <span class="sort-icon"></span></th>
+                <th class="th-sort" onclick="Dashboard.sortTable('ppgv')" data-col="ppgv">Value PPG% <span class="sort-icon"></span></th>
+                <th class="th-sort" onclick="Dashboard.sortTable('ytd26u')" data-col="ytd26u" id="th-vol26">2026 Units <span class="sort-icon"></span></th>
+                <th class="th-sort" onclick="Dashboard.sortTable('ytd25u')" data-col="ytd25u" id="th-vol25">2025 Units <span class="sort-icon"></span></th>
+                <th class="th-sort" onclick="Dashboard.sortTable('ppgu')" data-col="ppgu">Vol PPG% <span class="sort-icon"></span></th>
+                <th class="th-sort" onclick="Dashboard.sortTable('msv')" data-col="msv">Defined MS% Value <span class="sort-icon"></span></th>
+                <th class="th-sort" onclick="Dashboard.sortTable('msu')" data-col="msu">Defined MS% Volume <span class="sort-icon"></span></th>
+              </tr>
+            </thead>
+            <tbody id="tbl-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Loading overlay -->
+<div id="loading" class="loading-overlay" style="display:none">
+  <div class="loading-box">
+    <div class="spin-ring"></div>
+    <div class="loading-msg" id="loading-msg">Analysing market data...</div>
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="js/builtin-markets.js"></script>
+<script src="js/analytics.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/exporter.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
